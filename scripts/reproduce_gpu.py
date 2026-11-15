@@ -65,7 +65,7 @@ def main():
         if result.returncode:
             raise RuntimeError(f"{name} failed; see {logs / (name + '.log')}")
         print(f"DONE {name}: {progress[-1]['seconds']:.1f}s", flush=True)
-    print(f"Reproduction saved to {root}", flush=True)
+    print(f"Experiment saved to {root}", flush=True)
 
 
 if __name__ == "__main__":

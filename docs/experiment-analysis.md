@@ -1,6 +1,6 @@
 # 種子 13 實驗分析
 
-原始結果來自 RTX 5090 執行的 Qwen2.5-1.5B-Instruct / GSM8K 實驗。CPU 重算已核對資料指紋、兩組選樣、實際預算、5,457 筆保存的預測、結果表與 bootstrap，詳見 [核對紀錄](../results/seed13/reproduction.json)。
+本頁整理 RTX 5090 上的 Qwen2.5-1.5B-Instruct / GSM8K 實驗結果。CPU 重算已核對資料指紋、兩組選樣、實際預算、5,457 筆保存的預測、結果表與 bootstrap，詳見 [核對紀錄](../results/seed13/reproduction.json)。
 
 ## 主結果
 

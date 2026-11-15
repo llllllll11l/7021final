@@ -4,7 +4,7 @@
 
 ## 獨立環境
 
-Python 3.11 以上，原始執行使用 Python 3.12、PyTorch 2.9.1、CUDA 12.8。固定套件清單見 `pyproject.toml` 的 `train` extra。
+Python 3.11 以上。RTX 5090 實驗使用 Python 3.12、PyTorch 2.9.1、CUDA 12.8；RTX 5080 實驗使用 Python 3.11、PyTorch 2.9.1、CUDA 13.0。固定套件清單見 `pyproject.toml` 的 `train` extra。
 
 ```bash
 python -m venv .venv
@@ -29,9 +29,9 @@ python -m gsm8k_lora.artifacts fetch
 python -m gsm8k_lora.reproduce --report artifacts/verification.json
 ```
 
-這兩步還原原始實驗並在 CPU 上核對結果。已存在完整本地產物時直接執行第二步。還原目錄須為空，其他位置可用 `--destination` 指定。
+這兩步下載 RTX 5090 實驗資料並在 CPU 上核對結果。已存在完整本地產物時直接執行第二步。下載目錄須為空，其他位置可用 `--destination` 指定。
 
-## 獨立重跑
+## 新增 GPU 實驗
 
 先檢查 GPU 執行鏈路：
 
@@ -108,4 +108,4 @@ python -m gsm8k_lora.run predict --method moderate --seed 13 \
 
 ## 產物保存
 
-將 `data/`、`runs/`、`logs/`、`provenance/` 按原有目錄放到 Hugging Face 的 `seed13/` 下，保留 checkpoint 和 notebook 暫存檔。獨立 GPU 重現結果保存於另一個實驗目錄。更新 `results/seed13/artifacts.json` 的目錄與固定 revision 後，可使用同一個下載命令取得資料。
+將各顯卡實驗的 `data/`、`runs/`、`logs/`、`provenance/` 按目錄放到 Hugging Face，保留 checkpoint 和 notebook 暫存檔。RTX 5090 資料位於 `seed13/`，RTX 5080 資料位於 `rtx5080/`。各自的 `results/<實驗>/artifacts.json` 記錄目錄與固定 revision，可使用同一個下載入口取得資料。

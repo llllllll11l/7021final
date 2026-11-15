@@ -6,7 +6,7 @@
 
 Qwen2.5-1.5B-Instruct · GSM8K · LoRA · Single-GPU BF16
 
-[Quick start](#quick-start) · [Experiment pipeline](#experiment-pipeline) · [Results](#results) · [Reproduce the experiments](#reproduce-the-experiments) · [Repository layout](#repository-layout)
+[Quick start](#quick-start) · [Experiment pipeline](#experiment-pipeline) · [Results](#results) · [Run the experiments](#run-the-experiments) · [Repository layout](#repository-layout)
 
 ![Experiment pipeline](docs/assets/pipeline.png)
 
@@ -31,11 +31,11 @@ python -m pip install -e ".[notebook]"
 python -m jupyterlab notebooks/experiments.ipynb
 ```
 
-The [experiment notebook](notebooks/experiments.ipynb) switches between the original and RTX 5080 snapshots with `EXPERIMENT` and reads the included results, plots comparisons, checks token budgets, and exercises the answer parser. Later sections provide artifact downloads, per-question analysis, and optional GPU inference and training.
+The [experiment notebook](notebooks/experiments.ipynb) switches between the RTX 5090 and RTX 5080 experiment snapshots with `EXPERIMENT` and reads the included results, plots method comparisons, checks token budgets, and exercises the answer parser. Later sections provide artifact downloads, per-question analysis, and optional GPU inference and training.
 
 ### CUDA environment
 
-Scoring, training, and generation use one NVIDIA GPU with BF16 support. The original experiment used an RTX 5090 with CUDA 12.8; the local reproduction environment uses an RTX 5080 with CUDA 13.0. Installation commands are listed on the [PyTorch versions page](https://pytorch.org/get-started/previous-versions/).
+Scoring, training, and generation use one NVIDIA GPU with BF16 support. The RTX 5090 experiment uses CUDA 12.8, and the RTX 5080 experiment uses CUDA 13.0. Installation commands are listed on the [PyTorch versions page](https://pytorch.org/get-started/previous-versions/).
 
 ```bash
 python -m pip install torch==2.9.1 --index-url https://download.pytorch.org/whl/cu128
@@ -52,7 +52,7 @@ Detailed commands and recovery steps are in the [server workflow](docs/server-wo
 
 | Group | Method | Training data |
 | --- | --- | --- |
-| A · Base | Original instruction model | Direct generation with the shared prompt |
+| A · Base | Pretrained instruction model | Direct generation with the shared prompt |
 | B · Random | Length-bucketed random selection + LoRA | Complete examples sampled to each bucket's token quota |
 | C · Moderate | Moderate-loss selection + LoRA | Samples from the middle 50% of loss ranks in each length bucket |
 
@@ -65,7 +65,9 @@ Selection and evaluation rules are described in the [methodology](docs/methodolo
 
 ## Results
 
-Original run: training seed **13**, split seed **2026**, approximately **0.5M training tokens**, RTX 5090.
+Experiments on both GPUs use training seed **13**, split seed **2026**, and approximately **0.5M training tokens** for each LoRA condition. Each GPU has its own recorded environment, selections, adapters, and evaluation results.
+
+### RTX 5090
 
 | Method | Test accuracy | Valid answer format | Mean generated tokens | Scoring + training |
 | --- | ---: | ---: | ---: | ---: |
@@ -79,21 +81,21 @@ Both SFT runs improve answer formatting and shorten responses. Their primary acc
 
 The primary metric parses the final `####` field, with a fixed last-line numerical fallback when the marker is absent. Costs use CUDA-synchronized stage wall time; model download and loading are measured separately. See the [test table](results/seed13/summary_test.csv), [validation table](results/seed13/summary_validation.csv), and [experiment analysis](docs/experiment-analysis.md) (Chinese).
 
-### RTX 5080 rerun
+### RTX 5080
 
-A complete rerun in a separate Python 3.11.9 / PyTorch 2.9.1+cu130 environment rescored all candidates, trained both adapters for 80 updates each, and evaluated every validation and test question. CPU verification passed for all **5,457 new predictions**.
+Additional GPU test results were collected on an RTX 5080 (16 GB) using Python 3.11.9 and PyTorch 2.9.1+cu130. This experiment scores all candidates, trains both adapters for 80 updates each, and evaluates every validation and test question. CPU verification passed for all **5,457 saved predictions**.
 
-| Method | Original RTX 5090 test | RTX 5080 rerun test |
-| --- | ---: | ---: |
-| Base | 66.94% | 68.46% |
-| Random LoRA | 62.17% | 62.55% |
-| Moderate-loss LoRA | 62.32% | 62.70% |
+| Method | Test accuracy | Valid answer format | Mean generated tokens | Scoring + training |
+| --- | ---: | ---: | ---: | ---: |
+| A · Base | **68.46%** | 17.44% | 182.67 | 0 s |
+| B · Random | 62.55% | 98.41% | 93.06 | 155.88 s |
+| C · Moderate | 62.70% | 98.94% | 92.14 | 292.61 s |
 
-The rerun uses microbatch 2 with 16 accumulation steps, keeping the effective batch at 32. Recomputed losses and selected examples differ across the two execution configurations. See the [RTX 5080 result record](results/rtx5080/README.md) for budgets, costs, validation results, and the paired comparison. The complete files are browsable under [Hugging Face / rtx5080](https://huggingface.co/datasets/tomtom123/7021final-artifacts/tree/main/rtx5080).
+This experiment uses microbatch 2 with 16 accumulation steps, giving an effective batch of 32. See the [RTX 5080 result record](results/rtx5080/README.md) for budgets, costs, validation results, and the paired B/C comparison. The complete files are browsable under [Hugging Face / rtx5080](https://huggingface.co/datasets/tomtom123/7021final-artifacts/tree/main/rtx5080).
 
-## Reproduce the experiments
+## Run the experiments
 
-### Download and verify the original files
+### Download and verify the RTX 5090 files
 
 ```bash
 python -m pip install -e ".[hub]"
@@ -123,7 +125,7 @@ python -m gsm8k_lora.run eval --method moderate --seed 13 --split validation
 python -m gsm8k_lora.summarize --split validation
 ```
 
-[configs/default.json](configs/default.json) pins the original model and dataset commits. Its `data_dir` and `output_dir` paths resolve relative to the configuration file. Keep custom configurations in `configs/` and select one with `--config configs/my-experiment.json`. Freeze the shared settings before final testing, then run the same evaluation commands with `--split test`.
+[configs/default.json](configs/default.json) pins the model and dataset commits used by the experiments. Its `data_dir` and `output_dir` paths resolve relative to the configuration file. Keep custom configurations in `configs/` and select one with `--config configs/my-experiment.json`. Freeze the shared settings before final testing, then run the same evaluation commands with `--split test`.
 
 With prepared data available, run a separate experiment with a microbatch of 2 and 16 accumulation steps, preserving an effective batch of 32:
 
@@ -143,10 +145,10 @@ The controller rescores the candidate pool, trains B/C, and evaluates all three 
 │   └── experiments.ipynb    # Result analysis and optional GPU experiments
 ├── requirements/            # Training and notebook installation entries
 ├── results/
-│   ├── seed13/             # Original summaries, provenance, and CPU verification
-│   ├── rtx5080/            # Complete GPU rerun, summaries, and CPU verification
+│   ├── seed13/             # RTX 5090 results, provenance, and CPU verification
+│   ├── rtx5080/            # RTX 5080 results, provenance, and CPU verification
 │   └── gpu-check.json      # Isolated-environment GPU check
-├── scripts/                 # Figure generation and GPU reproduction commands
+├── scripts/                 # Figure generation and GPU experiment commands
 ├── src/gsm8k_lora/          # Data preparation, selection, training, and evaluation
 ├── tests/                   # Configuration, grading, and artifact-copy checks
 ├── artifacts/               # Local generated/downloaded files, ignored by Git
