@@ -1,4 +1,0 @@
-Generating train split:   0%|          | 0/7473 [00:00<?, ? examples/s]Generating train split: 100%|██████████| 7473/7473 [00:00<00:00, 290416.15 examples/s]
-Generating test split:   0%|          | 0/1319 [00:00<?, ? examples/s]Generating test split: 100%|██████████| 1319/1319 [00:00<00:00, 189260.96 examples/s]
-候选 6973，验证 500，测试 1319，过滤 0。
-检查 artifacts/data/metadata.json 与 mask_audit.json 后再评分。
