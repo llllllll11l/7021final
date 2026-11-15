@@ -37,11 +37,9 @@ def main():
     fig.savefig(ASSETS / "results.png", dpi=170)
     plt.close(fig)
 
-    fig, axis = plt.subplots(figsize=(13.5, 4.7), layout="constrained")
-    axis.set(xlim=(0, 13.5), ylim=(0, 4.7))
+    fig, axis = plt.subplots(figsize=(13.5, 3.6), layout="constrained")
+    axis.set(xlim=(0, 13.5), ylim=(0.15, 3.45))
     axis.axis("off")
-    axis.text(0.2, 4.15, "Same model. Matched budget. Two selection strategies.", fontsize=19, weight="bold", color="#21394f")
-    axis.text(0.2, 3.67, "Qwen2.5-1.5B-Instruct  /  GSM8K  /  BF16 LoRA", color="#61788b", fontsize=12)
 
     def box(x, y, width, height, title, detail, color):
         axis.add_patch(FancyBboxPatch((x, y), width, height, boxstyle="round,pad=0.12,rounding_size=0.14",
@@ -62,7 +60,6 @@ def main():
     arrow((5.65, 1.68), (6.08, 0.98))
     arrow((9.0, 2.59), (9.58, 2.13))
     arrow((9.0, 0.98), (9.58, 1.68))
-    axis.text(0.3, 0.15, "A · Base is evaluated with the same prompt, decoding settings, and held-out questions.", fontsize=11, color="#61788b")
     fig.savefig(ASSETS / "pipeline.png", dpi=170)
     plt.close(fig)
 
