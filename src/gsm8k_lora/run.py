@@ -2,36 +2,18 @@ import argparse
 import math
 from pathlib import Path
 
-import torch
-from datasets import Dataset
-from peft import LoraConfig, PeftModel
-from transformers import AutoTokenizer, GenerationConfig, set_seed
-from trl import SFTConfig, SFTTrainer
-
-from common import (
+from .common import (
+    DEFAULT_CONFIG, load_config,
     CompletionCollator, environment, extract_answer, fingerprint, finish_meter,
     load_model, load_prepared, messages, read_json, read_jsonl, require_cuda,
     start_meter, write_json, write_jsonl,
 )
 
 
-class BudgetTrainer(SFTTrainer):
-    """按实际进入训练的 microbatch 计数，排除 padding，重复暴露重复计入。"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.exposure_tokens = 0
-        self.answer_tokens = 0
-        self.exposure_examples = 0
-
-    def training_step(self, model, inputs, num_items_in_batch=None):
-        self.exposure_tokens += int(inputs["attention_mask"].sum())
-        self.answer_tokens += int((inputs["labels"][:, 1:] != -100).sum())
-        self.exposure_examples += inputs["input_ids"].shape[0]
-        return super().training_step(model, inputs, num_items_in_batch)
-
-
 def score(config):
+    import torch
+    from transformers import AutoTokenizer
+
     root, metadata = load_prepared(config)
     output = root / "scores"
     if (output / "metadata.json").exists():
@@ -78,6 +60,12 @@ def score(config):
 
 
 def train(config, method, seed, debug_steps=0):
+    from datasets import Dataset
+    from peft import LoraConfig
+    from transformers import AutoTokenizer, set_seed
+    from trl import SFTConfig
+    from .training import BudgetTrainer
+
     root, metadata = load_prepared(config)
     selection = read_json(root / "selections" / f"{method}_{seed}.json")
     if selection["data_fingerprint"] != metadata["fingerprint"]:
@@ -147,6 +135,9 @@ def train(config, method, seed, debug_steps=0):
 
 
 def get_inference_model(config, root, metadata, method, seed):
+    from peft import PeftModel
+    from transformers import AutoTokenizer
+
     name = "base" if method == "base" else f"{method}_{seed}"
     output = Path(config["output_dir"]) / name
     if method != "base":
@@ -163,6 +154,9 @@ def get_inference_model(config, root, metadata, method, seed):
 
 
 def generate(model, tokenizer, questions, config):
+    import torch
+    from transformers import GenerationConfig
+
     prompts = [tokenizer.apply_chat_template(messages(question, config), tokenize=False, add_generation_prompt=True)
                for question in questions]
     batch = tokenizer(prompts, padding=True, add_special_tokens=False, return_tensors="pt").to(model.device)
@@ -184,6 +178,8 @@ def generate(model, tokenizer, questions, config):
 
 
 def evaluate(config, method, seed, split):
+    from transformers import set_seed
+
     root, metadata = load_prepared(config)
     output = Path(config["output_dir"]) / ("base" if method == "base" else f"{method}_{seed}") / f"eval_{split}"
     if output.exists():
@@ -239,7 +235,7 @@ def evaluate(config, method, seed, split):
 
 def main():
     parser = argparse.ArgumentParser(description="GSM8K 候选评分、单卡 LoRA 训练、评估与命令行推理")
-    parser.add_argument("--config", default="config.json")
+    parser.add_argument("--config", default=DEFAULT_CONFIG)
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("score")
     train_parser = commands.add_parser("train")
@@ -255,7 +251,7 @@ def main():
         else:
             subparser.add_argument("--question", required=True)
     args = parser.parse_args()
-    config = read_json(args.config)
+    config = load_config(args.config)
     if args.command == "score":
         score(config)
     elif args.command == "train":

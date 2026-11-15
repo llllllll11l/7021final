@@ -1,0 +1,2 @@
+# Run from the repository root. Install the CUDA PyTorch wheel first for GPU work.
+-r requirements/train.txt

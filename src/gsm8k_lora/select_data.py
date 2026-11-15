@@ -4,7 +4,7 @@ import math
 import random
 import time
 
-from common import distribution, fingerprint, load_prepared, read_json, read_jsonl, write_json
+from .common import DEFAULT_CONFIG, distribution, fingerprint, load_config, load_prepared, read_json, read_jsonl, write_json
 
 
 def length_buckets(rows):
@@ -115,7 +115,11 @@ def select(config):
     })
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="生成长度分桶、token 配额匹配的 B/C 清单")
-    parser.add_argument("--config", default="config.json")
-    select(read_json(parser.parse_args().config))
+    parser.add_argument("--config", default=DEFAULT_CONFIG)
+    select(load_config(parser.parse_args().config))
+
+
+if __name__ == "__main__":
+    main()

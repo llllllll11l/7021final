@@ -15,10 +15,21 @@ PREPARATION_KEYS = (
 NUMBER = r"[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?|[+-]?\.\d+"
 FINAL_NUMBER = re.compile(rf"\s*[$£€]?\s*({NUMBER})\s*[$£€]?\s*\.?\s*")
 FALLBACK_NUMBER = re.compile(rf"(?<![\w.,/+\-])(?:{NUMBER})(?![\w,/]|\.\d)")
+DEFAULT_CONFIG = Path(__file__).resolve().parents[2] / "configs" / "default.json"
 
 
 def read_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def load_config(path=DEFAULT_CONFIG):
+    """Resolve runtime paths relative to the configuration file."""
+    path = Path(path).expanduser().resolve()
+    config = read_json(path)
+    for key in ("data_dir", "output_dir"):
+        value = Path(config[key]).expanduser()
+        config[key] = str((path.parent / value).resolve())
+    return config
 
 
 def write_json(path, value):
@@ -43,8 +54,11 @@ def fingerprint(value):
 def load_prepared(config):
     root = Path(config["data_dir"])
     metadata = read_json(root / "metadata.json")
-    if any(config[key] != metadata["config"][key] for key in PREPARATION_KEYS):
+    revision_keys = ("model_revision", "dataset_revision")
+    if any(config[key] != metadata["config"][key] for key in PREPARATION_KEYS if key not in revision_keys):
         raise ValueError("数据相关配置已变化，请使用新的 data_dir 重新 prepare。")
+    if any(config[key] not in (metadata["config"][key], metadata[key]) for key in revision_keys):
+        raise ValueError("模型或数据版本已变化，请使用新的 data_dir 重新 prepare。")
     return root, metadata
 
 

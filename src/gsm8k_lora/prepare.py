@@ -5,7 +5,7 @@ import time
 import unicodedata
 from pathlib import Path
 
-from common import distribution, encode_record, extract_answer, fingerprint, read_json, write_json, write_jsonl
+from .common import DEFAULT_CONFIG, distribution, encode_record, extract_answer, fingerprint, load_config, write_json, write_jsonl
 
 
 def normalize_question(question):
@@ -88,7 +88,11 @@ def prepare(config):
     print(f"检查 {root / 'metadata.json'} 与 mask_audit.json 后再评分。")
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="准备 GSM8K、冻结版本并构造 completion loss mask")
-    parser.add_argument("--config", default="config.json")
-    prepare(read_json(parser.parse_args().config))
+    parser.add_argument("--config", default=DEFAULT_CONFIG)
+    prepare(load_config(parser.parse_args().config))
+
+
+if __name__ == "__main__":
+    main()

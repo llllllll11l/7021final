@@ -3,7 +3,7 @@ import csv
 import random
 from pathlib import Path
 
-from common import load_prepared, read_json, read_jsonl, write_json, write_jsonl
+from .common import DEFAULT_CONFIG, load_config, load_prepared, read_json, read_jsonl, write_json, write_jsonl
 
 
 def summarize(config, split):
@@ -90,9 +90,13 @@ def summarize(config, split):
     print(comparisons)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="汇总 A/B/C、配对 bootstrap 和人工错误分析样例")
-    parser.add_argument("--config", default="config.json")
+    parser.add_argument("--config", default=DEFAULT_CONFIG)
     parser.add_argument("--split", choices=("validation", "test"), default="test")
     args = parser.parse_args()
-    summarize(read_json(args.config), args.split)
+    summarize(load_config(args.config), args.split)
+
+
+if __name__ == "__main__":
+    main()
