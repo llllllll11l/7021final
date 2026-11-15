@@ -1,0 +1,84 @@
+{
+  "status": "passed",
+  "data_fingerprint": "6aa758f4093d4df88b53762e870ce609b4ce8770a4c661726ea0a02807559a36",
+  "candidate_count": 6973,
+  "verified_predictions": 5457,
+  "checks": [
+    "data fingerprint",
+    "deterministic selection",
+    "actual training budgets",
+    "prediction IDs and references",
+    "numeric grading",
+    "metrics",
+    "paired bootstrap",
+    "CSV summaries"
+  ],
+  "evaluations": [
+    {
+      "method": "base",
+      "split": "validation",
+      "count": 500,
+      "accuracy": 0.814,
+      "strict_accuracy": 0.186,
+      "strict_format_rate": 0.226,
+      "parse_failure_rate": 0.012,
+      "hit_limit_rate": 0.0,
+      "mean_generated_tokens": 170.608
+    },
+    {
+      "method": "base",
+      "split": "test",
+      "count": 1319,
+      "accuracy": 0.6846095526914329,
+      "strict_accuracy": 0.12054586808188021,
+      "strict_format_rate": 0.17437452615617893,
+      "parse_failure_rate": 0.009097801364670205,
+      "hit_limit_rate": 0.006065200909780136,
+      "mean_generated_tokens": 182.66565579984837
+    },
+    {
+      "method": "random_13",
+      "split": "validation",
+      "count": 500,
+      "accuracy": 0.736,
+      "strict_accuracy": 0.736,
+      "strict_format_rate": 0.998,
+      "parse_failure_rate": 0.0,
+      "hit_limit_rate": 0.002,
+      "mean_generated_tokens": 87.484
+    },
+    {
+      "method": "random_13",
+      "split": "test",
+      "count": 1319,
+      "accuracy": 0.6254738438210766,
+      "strict_accuracy": 0.624715693707354,
+      "strict_format_rate": 0.9840788476118272,
+      "parse_failure_rate": 0.008339651250947688,
+      "hit_limit_rate": 0.006823351023502654,
+      "mean_generated_tokens": 93.05610310841547
+    },
+    {
+      "method": "moderate_13",
+      "split": "validation",
+      "count": 500,
+      "accuracy": 0.714,
+      "strict_accuracy": 0.714,
+      "strict_format_rate": 0.996,
+      "parse_failure_rate": 0.002,
+      "hit_limit_rate": 0.002,
+      "mean_generated_tokens": 87.648
+    },
+    {
+      "method": "moderate_13",
+      "split": "test",
+      "count": 1319,
+      "accuracy": 0.6269901440485216,
+      "strict_accuracy": 0.6262319939347991,
+      "strict_format_rate": 0.9893858984078847,
+      "parse_failure_rate": 0.00530705079605762,
+      "hit_limit_rate": 0.006065200909780136,
+      "mean_generated_tokens": 92.13722517058378
+    }
+  ]
+}

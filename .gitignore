@@ -1,6 +1,32 @@
-.venv/
+# Local environments and Python caches
+.venv*/
 __pycache__/
-hf-cache/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Generated data, models, logs, and notebook autosaves
+/artifacts/
+/hf-cache/
+**/.ipynb_checkpoints/
+checkpoint-*/
+*.log
+*.safetensors
+*.bin
 *.tar.gz
-*.pyc
+*.zip
+
+# Local course review report
+*Review_Report*.pdf
+*review_report*.pdf
+
+# Local credentials and editor files
+.env
+.env.*
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/

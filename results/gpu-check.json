@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "scope": "Randomly initialized tiny Qwen2 GPU smoke test",
+  "environment": {
+    "packages": {
+      "torch": "2.9.1+cu130",
+      "transformers": "4.57.3",
+      "peft": "0.18.0",
+      "trl": "0.27.0",
+      "datasets": "4.4.1",
+      "accelerate": "1.12.0",
+      "huggingface-hub": "0.36.2"
+    },
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5080"
+  },
+  "python": "3.11.9",
+  "bf16_matmul_mean": 16.0,
+  "initial_completion_loss": 11.9518461227417,
+  "training_loss": 11.915503978729248,
+  "update_steps": 2,
+  "T": 863,
+  "T_y": 431,
+  "generated_tokens": 8,
+  "adapter_saved": true,
+  "model_parameters": 9788032
+}

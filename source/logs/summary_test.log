@@ -1,4 +1,0 @@
-base            accuracy=0.6694 T=0 train=0.00 min
-random_13       accuracy=0.6217 T=499712 train=1.26 min
-moderate_13     accuracy=0.6232 T=499590 train=1.25 min
-[{'seed': 13, 'C_minus_B_pp': 0.1516300227445034, 'paired_bootstrap_95_ci_pp': [-1.5163002274450341, 1.8953752843062925]}]
