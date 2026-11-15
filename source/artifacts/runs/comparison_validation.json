@@ -1,0 +1,21 @@
+{
+  "pairs": [
+    {
+      "seed": 13,
+      "C_minus_B_pp": -0.6,
+      "paired_bootstrap_95_ci_pp": [
+        -3.5999999999999996,
+        2.1999999999999997
+      ]
+    }
+  ],
+  "mean_accuracy": {
+    "random": 0.724,
+    "moderate": 0.718
+  },
+  "mean_C_minus_B_pp": -0.6,
+  "recorded_formal_compute_minutes": 17.239608933466176,
+  "cost_note": "表内每个 C 均含一次全池评分；实际正式运行只计一次缓存评分。不含加载、验证、试跑、排障及人时。",
+  "bootstrap_note": "按题目配对重采样 2000 次，仅反映测试题不确定性，不替代训练种子重复。",
+  "case_selection": "每种子按固定 RNG 从三种错误类别各取最多 4 题；单种子各取最多 8 题。"
+}
