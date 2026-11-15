@@ -1,19 +1,19 @@
-# Seed 13 結果快照
+# Seed 13 Results
 
-這個目錄保留原始 RTX 5090 實驗的精簡紀錄。訓練種子為 13，資料切分種子為 2026。
+This directory contains compact records from the original RTX 5090 experiment. The training seed is 13 and the data-split seed is 2026.
 
-| 檔案 | 內容 |
+| File | Contents |
 | --- | --- |
-| `summary_test.csv` | 完整 1,319 題測試集的三組指標、預算與成本 |
-| `summary_validation.csv` | 500 題驗證集的相同指標 |
-| `comparison_*.json` | B/C 配對 bootstrap 與成本口徑 |
-| `config.json` | 原始凍結設定，保留當時的路徑字串 |
-| `environment.lock.txt` | 原始 Linux / RTX 5090 環境的 pip freeze |
-| `reproduction.json` | 從保存的資料與預測重新計算的 CPU 核對結果 |
-| `artifacts.json` | Hugging Face 下載位置、目錄與固定 revision |
+| `summary_test.csv` | Metrics, budgets, and costs for all 1,319 test questions |
+| `summary_validation.csv` | The same measurements on 500 validation questions |
+| `comparison_*.json` | Paired B/C bootstrap comparisons and cost accounting |
+| `config.json` | Original frozen configuration with its recorded path strings |
+| `environment.lock.txt` | Original Linux / RTX 5090 package snapshot |
+| `reproduction.json` | CPU verification of saved data, selections, predictions, and summaries |
+| `artifacts.json` | Hugging Face repository, directory, and pinned revision |
 
-CSV 中 accuracy、strict_accuracy 與各種 rate 使用 0–1 比例，時間使用分鐘。`T` 表示完整非 padding 訓練 token；`T_y` 表示參與 loss 的回答 token。
+Accuracy and rate columns use values from 0 to 1. Time columns use minutes. `T` counts complete non-padding training tokens; `T_y` counts answer tokens included in the loss.
 
-原始設定與環境檔用於追溯。執行新實驗使用根目錄的 `configs/default.json` 與 `pyproject.toml`。
+The frozen configuration and environment preserve the original run's provenance. Start new experiments with the repository's `configs/default.json` and `pyproject.toml`.
 
-完整資料、評分、選樣、adapter、逐題預測、日誌與暫存檔見 [Hugging Face 的 seed13 目錄](https://huggingface.co/datasets/tomtom123/7021final-artifacts/tree/main/seed13)。
+Prepared data, scores, selections, adapters, per-question predictions, logs, and notebook checkpoints are available in the [Hugging Face seed13 directory](https://huggingface.co/datasets/tomtom123/7021final-artifacts/tree/main/seed13).

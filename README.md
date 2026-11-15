@@ -2,23 +2,23 @@
 
 # GSM8K · Budget-Constrained LoRA
 
-**在相同 token 預算下，比較隨機選樣與中等損失選樣。**
+**Compare random and moderate-loss data selection at a matched token budget.**
 
-Qwen2.5-1.5B-Instruct · GSM8K · LoRA · 單卡 BF16
+Qwen2.5-1.5B-Instruct · GSM8K · LoRA · Single-GPU BF16
 
-[快速開始](#快速開始) · [實驗流程](#實驗流程) · [實驗結果](#實驗結果) · [重現實驗](#重現實驗) · [目錄結構](#目錄結構)
+[Quick start](#quick-start) · [Experiment pipeline](#experiment-pipeline) · [Results](#results) · [Reproduce the experiments](#reproduce-the-experiments) · [Repository layout](#repository-layout)
 
-![實驗流程](docs/assets/pipeline.png)
+![Experiment pipeline](docs/assets/pipeline.png)
 
 </div>
 
-本專案研究小模型數學解題的資料選擇：用原始模型對候選解答計算平均損失，再比較兩種選樣策略的 LoRA 微調效果與成本。兩組使用約 **500,000 個訓練 token**，並匹配完整序列長度、回答長度與樣本數。
+This project studies data selection for small-model mathematical reasoning. The base model scores candidate solutions by their average answer-token loss. Two selection strategies then train separate LoRA adapters with approximately **500,000 training tokens**, matching sequence length, answer length, and example count.
 
-程式、設定與精簡結果保存在 GitHub；完整資料、逐題預測、adapter、日誌和 notebook 暫存檔集中於 [Hugging Face 實驗產物庫](https://huggingface.co/datasets/tomtom123/7021final-artifacts)。
+GitHub contains the code, configurations, figures, and compact results. Prepared data, predictions, adapters, logs, and notebook checkpoints are available as browsable folders in the [Hugging Face experiment repository](https://huggingface.co/datasets/tomtom123/7021final-artifacts).
 
-## 快速開始
+## Quick start
 
-使用 Python 3.11 以上版本，從倉庫根目錄安裝：
+Use Python 3.11 or later and run the following commands from the repository root:
 
 ```bash
 python -m venv .venv
@@ -31,55 +31,57 @@ python -m pip install -e ".[notebook]"
 python -m jupyterlab notebooks/experiments.ipynb
 ```
 
-[實驗 notebook](notebooks/experiments.ipynb) 可直接讀取倉庫內的精簡結果，繪製比較圖、檢查 token 預算，並測試答案解析。完整產物載入、逐題分析與 GPU 實驗集中在後半部，透過開關啟用。
+The [experiment notebook](notebooks/experiments.ipynb) reads the included result snapshots, plots comparisons, checks token budgets, and exercises the answer parser. Later sections provide artifact downloads, per-question analysis, and optional GPU inference and training.
 
-### GPU 環境
+### CUDA environment
 
-評分、訓練與生成使用一張支援 BF16 的 NVIDIA GPU。原始實驗使用 RTX 5090；獨立重現環境使用 RTX 5080。CUDA 12.8 安裝方式見 [PyTorch 官方版本頁](https://pytorch.org/get-started/previous-versions/)。
+Scoring, training, and generation use one NVIDIA GPU with BF16 support. The original experiment used an RTX 5090 with CUDA 12.8; the local reproduction environment uses an RTX 5080 with CUDA 13.0. Installation commands are listed on the [PyTorch versions page](https://pytorch.org/get-started/previous-versions/).
 
 ```bash
 python -m pip install torch==2.9.1 --index-url https://download.pytorch.org/whl/cu128
 python -m pip install -e ".[train,notebook]"
 ```
 
-下載完整產物後，可先執行 `python scripts/check_gpu.py`，以小型隨機初始化的 Qwen2 檢查 BF16、completion loss、兩步 LoRA 訓練、adapter 儲存與生成。[GPU 檢查紀錄](results/gpu-check.json) 保存了獨立環境的執行結果。
+The CUDA 13.0 build uses the `cu130` index of the same PyTorch version.
 
-完整命令與失敗恢復方式見 [伺服器操作流程](docs/server-workflow.md)。
+After downloading the experiment files, run `python scripts/check_gpu.py` to check BF16 operations, completion loss, two LoRA updates, adapter saving, and generation with a small randomly initialized Qwen2 model. The [GPU check record](results/gpu-check.json) contains the observed environment and results.
 
-## 實驗流程
+Detailed commands and recovery steps are in the [server workflow](docs/server-workflow.md) (Chinese).
 
-| 組別 | 方法 | 訓練資料 |
+## Experiment pipeline
+
+| Group | Method | Training data |
 | --- | --- | --- |
-| A · Base | 原始指令模型 | 使用共同提示直接生成 |
-| B · Random | 長度分桶隨機選樣 + LoRA | 各桶按 token 配額抽取完整樣本 |
-| C · Moderate | 中等損失選樣 + LoRA | 各桶保留損失排名中間 50%，再依配額抽樣 |
+| A · Base | Original instruction model | Direct generation with the shared prompt |
+| B · Random | Length-bucketed random selection + LoRA | Complete examples sampled to each bucket's token quota |
+| C · Moderate | Moderate-loss selection + LoRA | Samples from the middle 50% of loss ranks in each length bucket |
 
-1. 從 GSM8K 官方訓練集固定抽出 500 題驗證資料，保留 6,973 題作為候選池。
-2. 清除訓練答案的計算註記，套用共同 chat template，僅監督 assistant 解答與 EOS。
-3. 原始模型為候選池評分，兩種策略各選約 2,543 題，訓練一遍、共 80 個更新步。
-4. 在完整驗證集與 1,319 題測試集上使用貪心生成，統計數值準確率、格式與成本。
+1. Hold out 500 validation questions from the official GSM8K training split, leaving 6,973 candidates.
+2. Remove calculation annotations, apply the shared chat template, and supervise assistant answers and EOS tokens.
+3. Score the candidate pool with the base model. Each strategy selects roughly 2.5K examples and trains for one pass, totaling 80 updates.
+4. Evaluate all 500 validation questions and 1,319 test questions with greedy decoding, recording numerical accuracy, answer formatting, generation length, time, and memory.
 
-詳細規則見 [方法與評估](docs/methodology.md)，研究設計見 [專案方案](docs/project-plan.md)。
+Selection and evaluation rules are described in the [methodology](docs/methodology.md); the [project plan](docs/project-plan.md) covers the research design. Both guides are in Chinese.
 
-## 實驗結果
+## Results
 
-原始紀錄：訓練種子 **13**、資料切分種子 **2026**、約 **0.5M token**、RTX 5090。
+Original run: training seed **13**, split seed **2026**, approximately **0.5M training tokens**, RTX 5090.
 
-| 方法 | 測試準確率 | 合法答案格式 | 平均生成 token | 評分 + 訓練 |
+| Method | Test accuracy | Valid answer format | Mean generated tokens | Scoring + training |
 | --- | ---: | ---: | ---: | ---: |
-| A · Base | **66.94%** | 16.60% | 182.71 | 0 秒 |
-| B · Random | 62.17% | 98.64% | 91.65 | 75.58 秒 |
-| C · Moderate | 62.32% | 99.17% | 89.82 | 113.42 秒 |
+| A · Base | **66.94%** | 16.60% | 182.71 | 0 s |
+| B · Random | 62.17% | 98.64% | 91.65 | 75.58 s |
+| C · Moderate | 62.32% | 99.17% | 89.82 | 113.42 s |
 
-![準確率、答案格式與訓練成本比較](docs/assets/results.png)
+![Accuracy, answer formatting, and training cost](docs/assets/results.png)
 
-兩組微調提高了格式遵循率、縮短了回答，主準確率低於原始模型。C 比 B 多答對 2 題，相差 **+0.15 個百分點**；配對 bootstrap 95% 區間為 **[−1.52, +1.90] 個百分點**。這次單種子結果尚未顯示中等損失選樣的明確優勢。
+Both SFT runs improve answer formatting and shorten responses. Their primary accuracy is below the base model. C answers two more test questions correctly than B, a difference of **+0.15 percentage points**. The paired bootstrap 95% interval is **[−1.52, +1.90] percentage points**, spanning zero. Each strategy uses one training seed.
 
-主準確率使用 `####` 數值欄位，缺少標記時使用預先固定的末行數值回退。成本記錄 CUDA 同步後的階段牆鐘時間，模型下載與載入另計。原始表格見 [測試結果](results/seed13/summary_test.csv)、[驗證結果](results/seed13/summary_validation.csv)；逐題案例與成本分析見 [實驗分析](docs/experiment-analysis.md)。
+The primary metric parses the final `####` field, with a fixed last-line numerical fallback when the marker is absent. Costs use CUDA-synchronized stage wall time; model download and loading are measured separately. See the [test table](results/seed13/summary_test.csv), [validation table](results/seed13/summary_validation.csv), and [experiment analysis](docs/experiment-analysis.md) (Chinese).
 
-## 重現實驗
+## Reproduce the experiments
 
-### 下載與核對原始產物
+### Download and verify the original files
 
 ```bash
 python -m pip install -e ".[hub]"
@@ -87,11 +89,13 @@ python -m gsm8k_lora.artifacts fetch
 python -m gsm8k_lora.reproduce --report artifacts/verification.json
 ```
 
-下載器取得固定 Hugging Face revision 的 `seed13/` 目錄，將原始檔案放到本地 `artifacts/`。CPU 核對會重算資料 fingerprint、選樣、訓練預算、5,457 筆預測的數值判分、兩個 split 的結果表與配對 bootstrap。核對紀錄見 [reproduction.json](results/seed13/reproduction.json)。已有本地產物時可直接執行核對命令；下載可用 `--destination` 指定空目錄。
+The downloader retrieves the `seed13/` folder at a pinned Hugging Face revision and places the files in local `artifacts/`. CPU verification recomputes the data fingerprint, selections, training budgets, grading of all 5,457 saved predictions, both result tables, and paired bootstrap comparisons. The saved [verification record](results/seed13/reproduction.json) contains the outcome.
 
-### 從資料準備開始
+With existing local artifacts, run the verification command directly. Use `--destination` to download into another empty directory.
 
-新 clone 的 `artifacts/` 為空，以下命令會建立新的實驗資料與結果：
+### Start from data preparation
+
+A fresh clone has an empty artifact directory. These commands prepare the data, score candidates, select training examples, and run the two training conditions:
 
 ```bash
 python -m gsm8k_lora.prepare
@@ -107,34 +111,34 @@ python -m gsm8k_lora.run eval --method moderate --seed 13 --split validation
 python -m gsm8k_lora.summarize --split validation
 ```
 
-設定在 [configs/default.json](configs/default.json)，固定原始實驗的模型與資料 commit SHA，`data_dir` 與 `output_dir` 相對於設定檔所在目錄解析。自訂設定放在 `configs/` 下，透過 `--config configs/my-experiment.json` 指定。正式測試前固定設定，將上述評估的 `--split validation` 換成 `--split test`。
+[configs/default.json](configs/default.json) pins the original model and dataset commits. Its `data_dir` and `output_dir` paths resolve relative to the configuration file. Keep custom configurations in `configs/` and select one with `--config configs/my-experiment.json`. Freeze the shared settings before final testing, then run the same evaluation commands with `--split test`.
 
-已有準備資料時，可在獨立目錄重新評分、訓練 B/C 並評估完整驗證與測試集：
+With prepared data available, run a separate experiment with a microbatch of 2 and 16 accumulation steps, preserving an effective batch of 32:
 
 ```bash
-python scripts/reproduce_gpu.py
+python scripts/reproduce_gpu.py --batch-size 2
 ```
 
-各階段逐項保存日誌與完成狀態。新一輪實驗請指定新的 `--output`；每個階段會保護已存在的結果。
+The controller rescores the candidate pool, trains B/C, and evaluates all three groups on the complete validation and test splits. Each stage saves logs and completion status. Choose a fresh `--output` for another run; completed results are protected against overwriting.
 
-## 目錄結構
+## Repository layout
 
 ```text
 7021final/
-├── configs/                 # 可執行的實驗設定
-├── docs/                    # 方法、分析、操作流程與圖片
+├── configs/                 # Executable experiment settings
+├── docs/                    # Methods, analysis, workflows, and figures
 ├── notebooks/
-│   └── experiments.ipynb    # 結果分析與可選 GPU 實驗
-├── requirements/            # 訓練與 notebook 安裝入口
+│   └── experiments.ipynb    # Result analysis and optional GPU experiments
+├── requirements/            # Training and notebook installation entries
 ├── results/
-│   ├── seed13/             # 精簡結果、原始設定與 CPU 核對紀錄
-│   └── gpu-check.json      # 獨立環境的 GPU 執行檢查
-├── scripts/                 # 繪圖與獨立 GPU 重現入口
-├── src/gsm8k_lora/          # 資料準備、選樣、訓練、評估與產物管理
-├── tests/                   # 路徑、解析與封存還原測試
-├── artifacts/               # 本地產物，下載或執行後建立，Git 忽略
+│   ├── seed13/             # Original summaries, provenance, and CPU verification
+│   └── gpu-check.json      # Isolated-environment GPU check
+├── scripts/                 # Figure generation and GPU reproduction commands
+├── src/gsm8k_lora/          # Data preparation, selection, training, and evaluation
+├── tests/                   # Configuration, grading, and artifact-copy checks
+├── artifacts/               # Local generated/downloaded files, ignored by Git
 ├── pyproject.toml
 └── README.md
 ```
 
-日誌、模型權重、checkpoint 與 notebook 暫存檔按原有目錄集中保存至 Hugging Face。本地 review report 保留原檔，透過 `.gitignore` 排除。
+Logs, model weights, checkpoints, and notebook autosaves retain their directory structure on Hugging Face. The local course review PDF is preserved and excluded from Git tracking.
