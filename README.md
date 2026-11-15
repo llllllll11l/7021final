@@ -31,7 +31,7 @@ python -m pip install -e ".[notebook]"
 python -m jupyterlab notebooks/experiments.ipynb
 ```
 
-The [experiment notebook](notebooks/experiments.ipynb) reads the included result snapshots, plots comparisons, checks token budgets, and exercises the answer parser. Later sections provide artifact downloads, per-question analysis, and optional GPU inference and training.
+The [experiment notebook](notebooks/experiments.ipynb) switches between the original and RTX 5080 snapshots with `EXPERIMENT` and reads the included results, plots comparisons, checks token budgets, and exercises the answer parser. Later sections provide artifact downloads, per-question analysis, and optional GPU inference and training.
 
 ### CUDA environment
 
@@ -78,6 +78,18 @@ Original run: training seed **13**, split seed **2026**, approximately **0.5M tr
 Both SFT runs improve answer formatting and shorten responses. Their primary accuracy is below the base model. C answers two more test questions correctly than B, a difference of **+0.15 percentage points**. The paired bootstrap 95% interval is **[−1.52, +1.90] percentage points**, spanning zero. Each strategy uses one training seed.
 
 The primary metric parses the final `####` field, with a fixed last-line numerical fallback when the marker is absent. Costs use CUDA-synchronized stage wall time; model download and loading are measured separately. See the [test table](results/seed13/summary_test.csv), [validation table](results/seed13/summary_validation.csv), and [experiment analysis](docs/experiment-analysis.md) (Chinese).
+
+### RTX 5080 rerun
+
+A complete rerun in a separate Python 3.11.9 / PyTorch 2.9.1+cu130 environment rescored all candidates, trained both adapters for 80 updates each, and evaluated every validation and test question. CPU verification passed for all **5,457 new predictions**.
+
+| Method | Original RTX 5090 test | RTX 5080 rerun test |
+| --- | ---: | ---: |
+| Base | 66.94% | 68.46% |
+| Random LoRA | 62.17% | 62.55% |
+| Moderate-loss LoRA | 62.32% | 62.70% |
+
+The rerun uses microbatch 2 with 16 accumulation steps, keeping the effective batch at 32. Recomputed losses and selected examples differ across the two execution configurations. See the [RTX 5080 result record](results/rtx5080/README.md) for budgets, costs, validation results, and the paired comparison. The complete files are browsable under [Hugging Face / rtx5080](https://huggingface.co/datasets/tomtom123/7021final-artifacts/tree/main/rtx5080).
 
 ## Reproduce the experiments
 
@@ -132,6 +144,7 @@ The controller rescores the candidate pool, trains B/C, and evaluates all three 
 ├── requirements/            # Training and notebook installation entries
 ├── results/
 │   ├── seed13/             # Original summaries, provenance, and CPU verification
+│   ├── rtx5080/            # Complete GPU rerun, summaries, and CPU verification
 │   └── gpu-check.json      # Isolated-environment GPU check
 ├── scripts/                 # Figure generation and GPU reproduction commands
 ├── src/gsm8k_lora/          # Data preparation, selection, training, and evaluation

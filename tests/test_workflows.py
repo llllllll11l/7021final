@@ -39,7 +39,7 @@ class ConfigurationTests(unittest.TestCase):
             result = subprocess.run([sys.executable, "-c",
                 "from gsm8k_lora.common import load_config; from pathlib import Path; "
                 "assert Path(load_config()['data_dir']).is_absolute()"],
-                cwd=temporary, env=environment, capture_output=True, text=True)
+                cwd=temporary, env=environment, capture_output=True, text=True, encoding="utf-8")
             self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_cli_help_without_loading_training_stack(self):
@@ -48,8 +48,9 @@ class ConfigurationTests(unittest.TestCase):
         for module in ("prepare", "select_data", "run", "summarize", "reproduce", "artifacts"):
             with self.subTest(module=module):
                 result = subprocess.run([sys.executable, "-m", f"gsm8k_lora.{module}", "--help"],
-                                        env=environment, capture_output=True, text=True)
+                                        env=environment, capture_output=True, text=True, encoding="utf-8")
                 self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("usage:", result.stdout)
 
 
 class NumericGradingTests(unittest.TestCase):
